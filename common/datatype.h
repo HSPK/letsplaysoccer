@@ -39,7 +39,9 @@ typedef struct Score{
 
 //player
 
-#define MAX_PLAYER 11
+#define MAX_PLAYER 300  //用户数的二分之一
+#define NTHREAD 3
+
 typedef struct Player{
     int team;
     int fd;

@@ -19,6 +19,8 @@ s_Bstatus ball_status;  //球的状态
 s_score score;
 int repollfd, bepollfd;
 
+struct Player *rteam, *bteam;
+
 int main(int argc, char **argv) 
 {
     int opt, port = -1, listener;
@@ -55,6 +57,9 @@ int main(int argc, char **argv)
     }
 
     DBG("<"GREEN"INFO"NONE"> : server start on port : %d\n", port); 
+    
+    rteam = (struct Player *)calloc(MAX_PLAYER, sizeof(struct Player));
+    bteam = (struct Player *)calloc(MAX_PLAYER, sizeof(struct Player));
 
     int epollfd = epoll_create(MAX_PLAYER * 2);
     repollfd = epoll_create(MAX_PLAYER);
@@ -64,6 +69,13 @@ int main(int argc, char **argv)
         perror("epoll_create()");
         exit(1);
     }
+
+    s_task_queue *redQueue;
+    s_task_queue *blueQueue;
+    
+    pthread_t red_t, blue_t;
+    pthread_create(&red_t, NULL, sub_reactor, redQueue);
+    pthread_create(&blue_t, NULL, sub_reactor, blueQueue);
 
     struct epoll_event ev, events[MAX_PLAYER * 2];
 
@@ -91,9 +103,10 @@ int main(int argc, char **argv)
             char buff[512];
             if (events[i].data.fd == listener) {
                 // recvfrom only
-                bzero(buff, sizeof(buff));
-                recvfrom(listener, buff, sizeof(buff), 0, (struct sockaddr *)&client, &len);
-                DBG("<"RED"Recv From"NONE"> : %s:%d --> %s \n", inet_ntoa(client.sin_addr), htons(client.sin_port), buff);
+                int new_fd = udp_accept(listener, &player);
+                if (new_fd > 0) {
+                    add_to_sub_reactor(&player);
+                }
             }
         }
     }
