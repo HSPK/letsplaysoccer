@@ -5,9 +5,9 @@
 	> Created Time: Wed 08 Jul 2020 03:23:17 PM CST
  ************************************************************************/
 
-#include "head.h"
-#include "common.h"
-#include "color.h"
+#include "../common/head.h"
+
+int sockfd;
 
 int main(int argc, char **argv)
 {
@@ -41,6 +41,7 @@ int main(int argc, char **argv)
                 team = atoi(optarg);
                 break;
             default:
+                fprintf(stderr, "usage : %s [-hpnmt]", argv[0]);
                 break;    
         }
     }
@@ -56,5 +57,22 @@ int main(int argc, char **argv)
     DBG("<"GREEN"name"NONE">: %s\n", name);
     DBG("<"GREEN"team"NONE">: %d\n", team);
     DBG("<"GREEN"msg"NONE">: %s\n", msg);
+
+    struct sockaddr_in server;
+    bzero(&server, sizeof(server));
+
+    server.sin_family = AF_INET;
+    server.sin_port = htons(server_port);
+    server.sin_addr.s_addr = inet_addr(server_ip);
+
+    socklen_t len = sizeof(server);
+
+    if ((sockfd = socket_udp()) < 0) {
+        perror("socket_udp()");
+        exit(1);
+    }
+    char log_msg[] = "hello world"; 
+    sendto(sockfd, log_msg, strlen(log_msg), 0, (struct sockaddr*)&server, len);
+    
     return 0;
 }

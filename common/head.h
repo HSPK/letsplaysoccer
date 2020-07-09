@@ -8,6 +8,7 @@
 #ifndef _HEAD_H
 #define _HEAD_H
 
+#include <sys/epoll.h>
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <dirent.h>
@@ -35,6 +36,10 @@
 #include <sys/shm.h>
 #include <unistd.h>
 #include <string.h>
-
+#include "common.h"
+#include "datatype.h"
+#include "color.h"
+#include "udp_server.h"
+#include "udp_client.h"
 
 #endif

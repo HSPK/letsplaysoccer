@@ -11,8 +11,8 @@
 char *get_conf_val(char *path, char *key) 
 {
     FILE *fp;
-    size_t nrd, len;
-    char *line = (char *)malloc(50);
+    size_t nrd, len = 0;
+    char *line = NULL;
     char *sub;
     if (path == NULL || key == NULL) {
         fprintf(stderr, "Error in arg!\n");
