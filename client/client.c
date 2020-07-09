@@ -12,16 +12,17 @@ int sockfd;
 int main(int argc, char **argv)
 {
     char conf_path[] = "football.conf";
-    char name[20] = {0};
-    int team = -1;
     char server_ip[20]={0};
     int  server_port = -1;
-    char msg[512] = {0};
-    
+    s_log_request request;
+    s_log_response response;
+
+    bzero(&request, sizeof(request));
+    bzero(&response, sizeof(response));
+    request.team = -1;
 
     DBG("<"RED"begin"NONE">\n");
     char opt;
-    if (argc != 1) {
     while((opt = getopt(argc, argv, "h:p:n:t:m:")) != -1) {
         //DBG("read opt : %c\n", opt);
          switch (opt) {
@@ -32,31 +33,35 @@ int main(int argc, char **argv)
                 server_port = atoi(optarg);
                 break;
             case 'n':
-                strcpy(name, optarg);
+                strcpy(request.name, optarg);
                 break;
             case 'm':
-                strcpy(msg, optarg);
+                strcpy(request.msg, optarg);
                 break;
             case 't':
-                team = atoi(optarg);
+                request.team = atoi(optarg);
                 break;
             default:
                 fprintf(stderr, "usage : %s [-hpnmt]", argv[0]);
+                exit(1);
                 break;    
         }
     }
-    }
     DBG("<"RED"complete info"NONE">\n");
     if (!strlen(server_ip)) strcpy(server_ip, get_conf_val(conf_path, "SERVERIP"));
-    if (!strlen(name)) strcpy(name, get_conf_val(conf_path, "NAME"));
-    if (!strlen(msg)) strcpy(msg, get_conf_val(conf_path, "MSG"));
-    if (team == -1) team = atoi(get_conf_val(conf_path, "TEAM"));
+    if (!strlen(request.name)) strcpy(request.name, get_conf_val(conf_path, "NAME"));
+    if (!strlen(request.msg)) strcpy(request.msg, get_conf_val(conf_path, "MSG"));
+    if (request.team == -1) request.team = atoi(get_conf_val(conf_path, "TEAM"));
     if (server_port == -1) server_port = atoi(get_conf_val(conf_path, "SERVERPORT"));
+    int slen = strlen(request.name);
+    if (request.name[slen - 1] == '\n') request.name[slen - 1] = '\0';
+    slen = strlen(request.msg);
+    if (request.msg[slen - 1] == '\n') request.msg[slen - 1] = '\0';
     DBG("<"GREEN"ip"NONE">: %s\n", server_ip);
     DBG("<"GREEN"port"NONE">: %d\n", server_port);
-    DBG("<"GREEN"name"NONE">: %s\n", name);
-    DBG("<"GREEN"team"NONE">: %d\n", team);
-    DBG("<"GREEN"msg"NONE">: %s\n", msg);
+    DBG("<"GREEN"name"NONE">: %s\n", request.name);
+    DBG("<"GREEN"team"NONE">: %d\n", request.team);
+    DBG("<"GREEN"msg"NONE">: %s\n", request.msg);
 
     struct sockaddr_in server;
     bzero(&server, sizeof(server));
@@ -71,8 +76,34 @@ int main(int argc, char **argv)
         perror("socket_udp()");
         exit(1);
     }
-    char log_msg[] = "hello world"; 
-    sendto(sockfd, log_msg, strlen(log_msg), 0, (struct sockaddr*)&server, len);
     
+    if (connect(sockfd, (struct sockaddr *)&server, len) < 0) {
+        perror("connect()");
+        exit(1);
+    }
+ 
+    send(sockfd, (void *)&request, sizeof(request), 0);
+    int nrcv;
+    if ((nrcv = recv(sockfd, (void *)&response, sizeof(response), 0)) != sizeof(response)) {
+        perror("recv()");
+        exit(1);
+    }
+    if (response.type == 1) {
+        fprintf(stderr, "login failed : %s\n", response.msg);
+        exit(1);
+    }
+    printf("%s\n", response.msg);
+
+    char buff[512];
+    while (1) {
+        memset(buff, 0, sizeof(buff));
+        scanf("%s", buff);
+        send(sockfd, buff, strlen(buff), 0);
+        recv(sockfd, buff, sizeof(buff), 0);
+        printf("recv : %s\n", buff);
+        memset(buff, 0, sizeof(buff));
+        recv(sockfd, buff, sizeof(buff), 0);
+        printf("recv : %s\n", buff);
+    }
     return 0;
 }
