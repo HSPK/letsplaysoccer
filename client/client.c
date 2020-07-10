@@ -29,7 +29,12 @@ void *work(void *arg)
                 printf("<"BLUE"%s"NONE"> : %s \n", msg.from, msg.msg);
             }  
         } else if (msg.type & CHAT_MSG) {
-
+            printf("<"PINK"%s"NONE"> ~ %s \n", msg.from, msg.msg);
+        } else if (msg.type & CHAT_SYS) {   
+            printf("<"YELLOW"%s"NONE"> : %s \n", msg.from, msg.msg);
+        } else if (msg.type & CHAT_FIN) {
+            printf("<"YELLOW"%s"NONE"> : %s \n", msg.from, msg.msg);
+            exit(0);
         } else {
             printf("<"RED"Error"NONE"> : unsopported msg type ! \n");
         }
@@ -143,8 +148,9 @@ int main(int argc, char **argv)
         printf("Input msg:\n");
         scanf("%[^\n]s", msg.msg);
         getchar();
+        if (msg.msg[0] == '@') msg.type = CHAT_MSG;
         send(sockfd, &msg, sizeof(msg), 0);
-        printf("send: %s\n", msg.msg);
+        //printf("send: %s\n", msg.msg);
     }
     return 0;
 }

@@ -95,7 +95,8 @@ int main(int argc, char **argv)
     struct sockaddr_in client;
     bzero(&client, sizeof(client));
     socklen_t len = sizeof(client);
-
+    
+    signal(SIGINT, logout);
     for (;;) {
         DBG("<"YELLOW"Main Reactor"NONE"> : waiting for client\n");
         int nfds = epoll_wait(epollfd, events, MAX_PLAYER * 2, -1);

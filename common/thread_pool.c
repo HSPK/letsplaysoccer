@@ -9,6 +9,19 @@
 extern int repollfd, bepollfd;
 extern s_player *bteam, *rteam;
 
+void sendto_all(s_chat_msg *msg);
+
+void logout(int signum)
+{
+    s_chat_msg msg;
+    bzero(&msg, sizeof(msg));
+    msg.type = CHAT_FIN;
+    strcpy(msg.from, "Server Info");
+    strcpy(msg.msg, "Thank you for using ! :)");
+    sendto_all(&msg);
+    exit(0);
+}
+
 void sendto_all(s_chat_msg *msg)
 {
     struct sockaddr_in client;
@@ -27,13 +40,48 @@ void sendto_all(s_chat_msg *msg)
     }
 }
 
+void sendto_single(int fd, s_chat_msg *msg, char *name)
+{
+    struct sockaddr_in client;
+    s_chat_msg buff;
+    bzero(&buff, sizeof(buff));
+    socklen_t len;
+
+    s_player *team[] = {bteam, rteam};
+
+    for (int j = 0; j < 2; j++) {
+    for (int i = 0; i < MAX_PLAYER; i++) {
+        if (strcmp(team[j][i].name, name) == 0) {
+            if (team[j][i].online) {
+                getpeername(team[j][i].fd, (struct sockaddr *)&client, &len);
+                sendto(team[j][i].fd, msg, sizeof(s_chat_msg), 0, (struct sockaddr *)&client, len);
+                send(fd, msg, sizeof(s_chat_msg), 0);
+                return;
+            } else {
+                buff.type = CHAT_MSG;
+                strcpy(buff.from, "Server Info");
+                sprintf(buff.msg, "%s is not online !", name);
+                send(fd, &buff, sizeof(s_chat_msg), 0);
+                return;
+            }
+        }
+    }
+    }
+    buff.type = CHAT_MSG;
+    sprintf(buff.from, "Server Info");
+    sprintf(buff.msg, "%s is not logged in !", name);
+    send(fd, &buff, sizeof(s_chat_msg), 0);
+}
+
 void do_work(struct Player *player) {
 
     DBG("<"BLUE"In do work"NONE"> %s \n", player->name);
     int fd = player->fd;
     s_chat_msg msg;
     bzero(&msg, sizeof(msg));
-
+    s_chat_msg buff;
+    bzero(&buff, sizeof(buff));
+    
     if (recv(fd, &msg, sizeof(msg), 0) < 0) {
         perror("recv()");
         exit(1);
@@ -43,7 +91,31 @@ void do_work(struct Player *player) {
         printf("<"GREEN"%s"NONE"> : %s \n", player->name, msg.msg);
         sendto_all(&msg);
     } else if (msg.type & CHAT_MSG) {
-        printf("<%s> $ %s \n", player->name, msg.msg);
+        char name[20] = {0};
+        int i = 1;
+        
+        if (msg.msg[0] != '@') {
+            buff.type = CHAT_MSG;
+            sprintf(buff.from, "Server Info");
+            sprintf(buff.msg, "Check your fomate Please ! ");
+            send(fd, &buff, sizeof(buff), 0);
+            return;
+        }
+        
+        while (msg.msg[i] != ' ') {
+            name[i - 1] = msg.msg[i];
+            i++;
+        }
+        name[i] = '\n';
+        while (msg.msg[i] == ' ') i++;
+        
+        buff.type = CHAT_MSG;
+        strcpy(buff.from, msg.from);
+        strcpy(buff.msg, msg.msg + i);
+        
+        printf("<%s> $ %s : %s\n", msg.from, player->name, buff.msg);
+        
+        sendto_single(fd, &buff, name);
     } else if (msg.type & CHAT_FIN) {
         s_player *team = player->team ? bteam : rteam;
         for (int i = 0; i < MAX_PLAYER; i++) {

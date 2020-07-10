@@ -14,12 +14,12 @@
 #define CHAT_ACK 0x04
 #define CHAT_WALL 0x08    //公聊
 #define CHAT_MSG 0x10     //私聊
-#define CHAT_FUNC 0x100  //功能
+#define CHAT_FUNC 0x20  //功能
+#define CHAT_SYS 0x40   //系统通知
 
 typedef struct ChatMsg {
     int type;
     char from[20];
-    char to[20];
     char msg[1024];
 }s_chat_msg;
 
