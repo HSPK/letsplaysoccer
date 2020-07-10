@@ -149,6 +149,7 @@ int main(int argc, char **argv)
         scanf("%[^\n]s", msg.msg);
         getchar();
         if (msg.msg[0] == '@') msg.type = CHAT_MSG;
+        if (msg.msg[0]=='#') msg.type = CHAT_FUNC;
         send(sockfd, &msg, sizeof(msg), 0);
         //printf("send: %s\n", msg.msg);
     }
