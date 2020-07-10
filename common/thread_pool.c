@@ -40,23 +40,40 @@ void sendto_single(int fd, s_chat_msg *msg, char *name)
     s_player *team[] = {bteam, rteam};
 
     for (int j = 0; j < 2; j++) {
-    for (int i = 0; i < MAX_PLAYER; i++) {
-        if (strcmp(team[j][i].name, name) == 0) {
-            if (team[j][i].online) {
-                //getpeername(team[j][i].fd, (struct sockaddr *)&client, &len);
-                //sendto(team[j][i].fd, msg, sizeof(s_chat_msg), 0, (struct sockaddr *)&client, len);
-                send(team[j][i].fd, msg, sizeof(s_chat_msg), 0);
-                send(fd, msg, sizeof(s_chat_msg), 0);
-                return;
-            } else {
-                buff.type = CHAT_MSG;
-                strcpy(buff.from, "Server Info");
-                sprintf(buff.msg, "%s is not online !", name);
-                send(fd, &buff, sizeof(s_chat_msg), 0);
-                return;
+        for (int i = 0; i < MAX_PLAYER; i++) {
+            if (strcmp(team[j][i].name, name) == 0) {
+                if (team[j][i].online) {
+                    //getpeername(team[j][i].fd, (struct sockaddr *)&client, &len);
+                    //sendto(team[j][i].fd, msg, sizeof(s_chat_msg), 0, (struct sockaddr *)&client, len);
+                    send(team[j][i].fd, msg, sizeof(s_chat_msg), 0);
+                    send(fd, msg, sizeof(s_chat_msg), 0);
+                    return;
+                } else {
+                    buff.type = CHAT_MSG;
+                    strcpy(buff.from, "Server Info");
+                    sprintf(buff.msg, "%s is not online !", name);
+                    send(fd, &buff, sizeof(s_chat_msg), 0);
+                    return;
+                }
             }
         }
     }
+    for (int j = 0; j < 2; j++) {
+        for (int i = 0; i < MAX_PLAYER; i++) {
+            if (strcmp(team[j][i].name, name) == 0) {
+                if (team[j][i].online) {
+                    send(team[j][i].fd, msg, sizeof(s_chat_msg), 0);
+                    send(fd, msg, sizeof(s_chat_msg), 0);
+                    return;
+                } else {
+                    buff.type = CHAT_MSG;
+                    strcpy(buff.from, "Server Info");
+                    sprintf(buff.msg, "%s is not online !", name);
+                    send(fd, &buff, sizeof(s_chat_msg), 0);
+                    return;
+                }
+            }
+        }
     }
     buff.type = CHAT_MSG;
     sprintf(buff.from, "Server Info");
