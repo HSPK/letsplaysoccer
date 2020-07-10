@@ -64,6 +64,24 @@ void sendto_single(int fd, s_chat_msg *msg, char *name)
     send(fd, &buff, sizeof(s_chat_msg), 0);
 }
 
+void display(const char *path)
+{
+    FILE *fp = fopen(path, "r");
+    
+    if (fp == NULL) {
+        perror("fopen()");
+        exit(1);
+    }
+
+    s_chat_msg buff;
+    bzero(&buff, sizeof(buff));
+    buff.type = CHAT_FUNC;
+    while (fgets(buff.msg, sizeof(buff.msg), fp) != NULL) {
+        sendto_all(&buff);
+        bzero(buff.msg, sizeof(buff.msg));
+    }
+}
+
 void do_work(struct Player *player) {
 
     DBG("<"BLUE"In do work"NONE"> %s \n", player->name);
@@ -72,7 +90,9 @@ void do_work(struct Player *player) {
     bzero(&msg, sizeof(msg));
     s_chat_msg buff;
     bzero(&buff, sizeof(buff));
-    
+    const char suantou_path[] = "../common/suantou.txt";
+
+
     if (recv(fd, &msg, sizeof(msg), 0) < 0) {
         perror("recv()");
         exit(1);
@@ -125,6 +145,23 @@ void do_work(struct Player *player) {
         sendto_all(&buff);
     } else if (msg.type & CHAT_FUNC) {
         //#1
+        int cmd = atoi(msg.msg + 1);
+        switch (cmd) {
+            case 1:
+            case 2:
+                buff.type = CHAT_WALL;
+                strcpy(buff.from, player->name);
+                sprintf(buff.msg, "little suan");
+                sendto_all(&buff);
+                display(suantou_path);
+                break;
+            default:
+                buff.type = CHAT_MSG;
+                sprintf(buff.from, "Server Info");
+                sprintf(buff.msg, "Invaild Command");
+                send(fd, &buff, sizeof(buff), 0);
+                break;
+        }
     }
 
     DBG("<"RED"Recv"NONE"> : %s\n", msg.msg);

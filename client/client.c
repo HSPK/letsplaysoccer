@@ -40,6 +40,8 @@ void *work(void *arg)
         } else if (msg.type & CHAT_FIN) {
             printf("<"YELLOW"%s"NONE"> : %s \n", msg.from, msg.msg);
             exit(0);
+        } else if (msg.type & CHAT_FUNC) {
+            printf("%s", msg.msg);
         } else {
             printf("<"RED"Error"NONE"> : unsopported msg type ! \n");
         }
@@ -154,6 +156,7 @@ int main(int argc, char **argv)
         scanf("%[^\n]s", msg.msg);
         getchar();
         if (msg.msg[0] == '@') msg.type = CHAT_MSG;
+        if (msg.msg[0] == '#') msg.type = CHAT_FUNC;
         send(sockfd, &msg, sizeof(msg), 0);
         //printf("send: %s\n", msg.msg);
     }
