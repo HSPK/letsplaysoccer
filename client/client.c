@@ -22,10 +22,16 @@ void *work(void *arg)
             perror("recv()");
             exit(1);
         }
-        if (strcmp(msg.from, request.name) == 0) {
-            printf("<"GREEN"%s"NONE"> : %s \n", msg.from, msg.msg);
+        if (msg.type & CHAT_WALL) {
+            if (strcmp(msg.from, request.name) == 0) {
+                printf("<"GREEN"%s"NONE"> : %s \n", msg.from, msg.msg);
+            } else {
+                printf("<"BLUE"%s"NONE"> : %s \n", msg.from, msg.msg);
+            }  
+        } else if (msg.type & CHAT_MSG) {
+
         } else {
-            printf("<"BLUE"%s"NONE"> : %s \n", msg.from, msg.msg);
+            printf("<"RED"Error"NONE"> : unsopported msg type ! \n");
         }
     }
 }
