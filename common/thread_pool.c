@@ -7,6 +7,7 @@
 
 #include "head.h"
 extern int repollfd, bepollfd;
+extern s_player *bteam, *rteam;
 
 void do_work(struct Player *player) {
     DBG("<"BLUE"In do work"NONE"> %s \n", player->name);
@@ -22,10 +23,16 @@ void do_work(struct Player *player) {
     } else if (msg.type & CHAT_MSG) {
         printf("<%s> $ %s \n", player->name, msg.msg);
     } else if (msg.type & CHAT_FIN) {
-        player->online = 0;
+        s_player *team = player->team ? bteam : rteam;
+        for (int i = 0; i < MAX_PLAYER; i++) {
+            if (team[i].online && strcmp(team[i].name, player->name) == 0) {
+                team[i].online = 0;
+                break;
+            }
+        }
         int epollfd = player->team ? bepollfd : repollfd;
         del_event(epollfd, player->fd);
-        printf(GREEN"Server Info"NONE" : %s log out\n", player->name);
+        printf("<"YELLOW"Server Info"NONE"> : %s log out\n", player->name);
     }
     DBG("<"RED"Recv"NONE"> : %s\n", msg.msg);
     send(fd, msg.msg, strlen(msg.msg), 0);

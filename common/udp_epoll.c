@@ -44,10 +44,10 @@ void add_to_sub_reactor(s_player *player)
         perror("FULL TEAM!\n");
         return;
     }
-    team[sub] = *player;
-    //memcpy(&team[sub], player, sizeof(s_player));
-    team[sub].online = 1;
-    team[sub].flag = 10;
+    //team[sub] = *player;
+    memcpy(&team[sub], player, sizeof(s_player));
+    //team[sub].online = 1;
+    //team[sub].flag = 10;
     DBG("<"L_RED"add to sub reactor"NONE"> sub = %d name = %s\n", sub, player->name);
     if (player->team)
         add_event_ptr(bepollfd, player->fd, events, player);
@@ -111,6 +111,7 @@ int udp_accept(int fd, s_player *player)
         return -1;
     }
 
+    printf("<"YELLOW"Server Info"NONE"> : %s log in\n", request.name);
     DBG("<"RED"Login success!"NONE">\n");
     response.type = 0;
     strcpy(response.msg, "Login success! Enjoy yourself!\n");
