@@ -13,6 +13,7 @@ extern s_player *rteam, *bteam;
 void add_event_ptr(int epollfd, int fd, int events, s_player *player)
 {
     struct epoll_event ev;
+    bzero(&ev, sizeof(ev));
     ev.events = events;
     ev.data.ptr = (void *)player;
     epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev);
@@ -35,7 +36,6 @@ void add_to_sub_reactor(s_player *player)
 {
     s_player *team;
     int sub;
-    int events = EPOLLIN | EPOLLET;
     if (player->team) 
         team = bteam;
     else
@@ -50,16 +50,16 @@ void add_to_sub_reactor(s_player *player)
     //team[sub].flag = 10;
     DBG("<"L_RED"add to sub reactor"NONE"> sub = %d name = %s\n", sub, player->name);
     if (player->team)
-        add_event_ptr(bepollfd, player->fd, events, player);
+        add_event_ptr(bepollfd, team[sub].fd, EPOLLIN | EPOLLET, &team[sub]);
     else
-        add_event_ptr(repollfd, player->fd, events, player);
+        add_event_ptr(repollfd, team[sub].fd, EPOLLIN | EPOLLET, &team[sub]);
 }    
 
 int udp_connect(struct sockaddr_in *client)
 {
     int sockfd;
     if ((sockfd = socket_create_udp(port)) < 0) {
-        perror("socket_udp()");
+        perror("socket_create_udp()");
         return -1;
     }
 
@@ -127,7 +127,9 @@ int udp_accept(int fd, s_player *player)
     player->team = request.team;
     
     new_fd = udp_connect(&client);
-    
+   
+    DBG("<"RED"sockfd"NONE" < %s : %d>\n", player->name, new_fd);
+
     player->fd = new_fd;
     player->online = 1;
     player->flag = 10;
