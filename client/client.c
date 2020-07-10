@@ -14,13 +14,18 @@ s_log_request request;
 void *work(void *arg)
 {
     int fd;
+    int ret;
     fd = *(int *)arg;
     s_chat_msg msg;
     while (1) {
         bzero(&msg, sizeof(msg));
-        if (recv(fd, &msg, sizeof(msg), 0) < 0) {
+        if ((ret = recv(fd, &msg, sizeof(msg), 0)) < 0) {
             perror("recv()");
             exit(1);
+        }
+        if (ret != sizeof(msg)) {
+            printf("<"RED"udp lost"NONE">\n");
+            continue;
         }
         if (msg.type & CHAT_WALL) {
             if (strcmp(msg.from, request.name) == 0) {
@@ -145,7 +150,7 @@ int main(int argc, char **argv)
         bzero(&msg, sizeof(msg));
         msg.type = CHAT_WALL;
         strcpy(msg.from, request.name);
-        printf("Input msg:\n");
+        //printf("Input msg:\n");
         scanf("%[^\n]s", msg.msg);
         getchar();
         if (msg.msg[0] == '@') msg.type = CHAT_MSG;

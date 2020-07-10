@@ -9,6 +9,7 @@
 
 extern int port, repollfd, bepollfd;
 extern s_player *rteam, *bteam;
+pthread_mutex_t bmutex, rmutex;
 
 void add_event_ptr(int epollfd, int fd, int events, s_player *player)
 {
@@ -37,6 +38,10 @@ void add_to_sub_reactor(s_player *player)
     s_player *team;
     int sub;
     if (player->team) 
+        pthread_mutex_lock(&bmutex);
+    else 
+        pthread_mutex_lock(&rmutex);
+    if (player->team) 
         team = bteam;
     else
         team = rteam;
@@ -48,6 +53,10 @@ void add_to_sub_reactor(s_player *player)
     memcpy(&team[sub], player, sizeof(s_player));
     //team[sub].online = 1;
     //team[sub].flag = 10;
+    if (team->team)
+        pthread_mutex_unlock(&bmutex);
+    else
+        pthread_mutex_unlock(&rmutex);
     DBG("<"L_RED"add to sub reactor"NONE"> sub = %d name = %s\n", sub, player->name);
     if (player->team)
         add_event_ptr(bepollfd, team[sub].fd, EPOLLIN | EPOLLET, &team[sub]);
@@ -111,6 +120,12 @@ int udp_accept(int fd, s_player *player)
         return -1;
     }
 
+    s_chat_msg msg;
+    bzero(&msg, sizeof(msg));
+    msg.type = CHAT_SYS;
+    sprintf(msg.from, "Server Info");
+    sprintf(msg.msg, "%s log in", request.name);
+    sendto_all(&msg);
     printf("<"YELLOW"Server Info"NONE"> : %s log in\n", request.name);
     DBG("<"RED"Login success!"NONE">\n");
     response.type = 0;

@@ -9,43 +9,33 @@
 extern int repollfd, bepollfd;
 extern s_player *bteam, *rteam;
 
-void sendto_all(s_chat_msg *msg);
-
-void logout(int signum)
-{
-    s_chat_msg msg;
-    bzero(&msg, sizeof(msg));
-    msg.type = CHAT_FIN;
-    strcpy(msg.from, "Server Info");
-    strcpy(msg.msg, "Thank you for using ! :)");
-    sendto_all(&msg);
-    exit(0);
-}
 
 void sendto_all(s_chat_msg *msg)
 {
-    struct sockaddr_in client;
-    socklen_t len;
+    //struct sockaddr_in client;
+    //socklen_t len;
     for (int i = 0; i < MAX_PLAYER; i++) {
         if (bteam[i].online) {
-            bzero(&client, sizeof(client));
-            getpeername(bteam[i].fd, (struct sockaddr *)&client, &len);
-            sendto(bteam[i].fd, msg, sizeof(s_chat_msg), 0, (struct sockaddr *)&client, len);
+            //bzero(&client, sizeof(client));
+            //getpeername(bteam[i].fd, (struct sockaddr *)&client, &len);
+            //sendto(bteam[i].fd, msg, sizeof(s_chat_msg), 0, (struct sockaddr *)&client, len);
+            send(bteam[i].fd, msg, sizeof(s_chat_msg), 0);
         }
         if (rteam[i].online) {
-            bzero(&client, sizeof(client));
-            getpeername(rteam[i].fd, (struct sockaddr *)&client, &len);
-            sendto(rteam[i].fd, msg, sizeof(s_chat_msg), 0, (struct sockaddr *)&client, len);
+            //bzero(&client, sizeof(client));
+            //getpeername(rteam[i].fd, (struct sockaddr *)&client, &len);
+            //sendto(rteam[i].fd, msg, sizeof(s_chat_msg), 0, (struct sockaddr *)&client, len);
+            send(rteam[i].fd, msg, sizeof(s_chat_msg), 0);
         }
     }
 }
 
 void sendto_single(int fd, s_chat_msg *msg, char *name)
 {
-    struct sockaddr_in client;
+    //struct sockaddr_in client;
     s_chat_msg buff;
     bzero(&buff, sizeof(buff));
-    socklen_t len;
+    //socklen_t len;
 
     s_player *team[] = {bteam, rteam};
 
@@ -53,8 +43,9 @@ void sendto_single(int fd, s_chat_msg *msg, char *name)
     for (int i = 0; i < MAX_PLAYER; i++) {
         if (strcmp(team[j][i].name, name) == 0) {
             if (team[j][i].online) {
-                getpeername(team[j][i].fd, (struct sockaddr *)&client, &len);
-                sendto(team[j][i].fd, msg, sizeof(s_chat_msg), 0, (struct sockaddr *)&client, len);
+                //getpeername(team[j][i].fd, (struct sockaddr *)&client, &len);
+                //sendto(team[j][i].fd, msg, sizeof(s_chat_msg), 0, (struct sockaddr *)&client, len);
+                send(team[j][i].fd, msg, sizeof(s_chat_msg), 0);
                 send(fd, msg, sizeof(s_chat_msg), 0);
                 return;
             } else {
@@ -102,31 +93,38 @@ void do_work(struct Player *player) {
             return;
         }
         
-        while (msg.msg[i] != ' ') {
+        while (msg.msg[i] != ' ' && i < 20) {
             name[i - 1] = msg.msg[i];
             i++;
         }
         name[i] = '\n';
-        while (msg.msg[i] == ' ') i++;
+        while (msg.msg[i] == ' ' && i < 1024) i++;
         
         buff.type = CHAT_MSG;
         strcpy(buff.from, msg.from);
         strcpy(buff.msg, msg.msg + i);
         
-        printf("<%s> $ %s : %s\n", msg.from, player->name, buff.msg);
+        printf("<%s - %s > ~ %s\n", msg.from, name, buff.msg);
         
         sendto_single(fd, &buff, name);
     } else if (msg.type & CHAT_FIN) {
-        s_player *team = player->team ? bteam : rteam;
-        for (int i = 0; i < MAX_PLAYER; i++) {
-            if (team[i].online && strcmp(team[i].name, player->name) == 0) {
-                team[i].online = 0;
-                break;
-            }
-        }
+        //s_player *team = player->team ? bteam : rteam;
+        //for (int i = 0; i < MAX_PLAYER; i++) {
+        //    if (team[i].online && strcmp(team[i].name, player->name) == 0) {
+        //        team[i].online = 0;
+        //        break;
+        //    }
+        //}
+        player->online = 0;
         int epollfd = player->team ? bepollfd : repollfd;
         del_event(epollfd, player->fd);
         printf("<"YELLOW"Server Info"NONE"> : %s log out\n", player->name);
+        buff.type = CHAT_SYS;
+        sprintf(buff.from, "Server Info");
+        sprintf(buff.msg, "%s log out\n", player->name);
+        sendto_all(&buff);
+    } else if (msg.type & CHAT_FUNC) {
+        //#1
     }
 
     DBG("<"RED"Recv"NONE"> : %s\n", msg.msg);

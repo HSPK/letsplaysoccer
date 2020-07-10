@@ -1,5 +1,5 @@
 obj = client.o common.o udp_client.o
-isd = -D _D
+isd = 
 inc = ../common/
 client: $(obj)
 	gcc -o client $(obj) -lpthread $(isd)
