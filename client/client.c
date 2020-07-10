@@ -8,19 +8,25 @@
 #include "../common/head.h"
 
 int sockfd;
+s_log_response response;
+s_log_request request;
 
 void *work(void *arg)
 {
     int fd;
     fd = *(int *)arg;
-    char buff[512];
+    s_chat_msg msg;
     while (1) {
-        memset(buff, 0, sizeof(buff));
-        if (recv(fd, buff, sizeof(buff), 0) < 0) {
+        bzero(&msg, sizeof(msg));
+        if (recv(fd, &msg, sizeof(msg), 0) < 0) {
             perror("recv()");
             exit(1);
         }
-        printf("recv: %s\n", buff);
+        if (strcmp(msg.from, request.name) == 0) {
+            printf("<"GREEN"%s"NONE"> : %s \n", msg.from, msg.msg);
+        } else {
+            printf("<"BLUE"%s"NONE"> : %s \n", msg.from, msg.msg);
+        }
     }
 }
 
@@ -38,8 +44,6 @@ int main(int argc, char **argv)
     char conf_path[] = "football.conf";
     char server_ip[20]={0};
     int  server_port = -1;
-    s_log_request request;
-    s_log_response response;
 
     bzero(&request, sizeof(request));
     bzero(&response, sizeof(response));
@@ -129,6 +133,7 @@ int main(int argc, char **argv)
         s_chat_msg msg;
         bzero(&msg, sizeof(msg));
         msg.type = CHAT_WALL;
+        strcpy(msg.from, request.name);
         printf("Input msg:\n");
         scanf("%[^\n]s", msg.msg);
         getchar();

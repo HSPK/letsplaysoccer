@@ -9,17 +9,39 @@
 extern int repollfd, bepollfd;
 extern s_player *bteam, *rteam;
 
+void sendto_all(s_chat_msg *msg)
+{
+    struct sockaddr_in client;
+    socklen_t len;
+    for (int i = 0; i < MAX_PLAYER; i++) {
+        if (bteam[i].online) {
+            bzero(&client, sizeof(client));
+            getpeername(bteam[i].fd, (struct sockaddr *)&client, &len);
+            sendto(bteam[i].fd, msg, sizeof(s_chat_msg), 0, (struct sockaddr *)&client, len);
+        }
+        if (rteam[i].online) {
+            bzero(&client, sizeof(client));
+            getpeername(rteam[i].fd, (struct sockaddr *)&client, &len);
+            sendto(rteam[i].fd, msg, sizeof(s_chat_msg), 0, (struct sockaddr *)&client, len);
+        }
+    }
+}
+
 void do_work(struct Player *player) {
+
     DBG("<"BLUE"In do work"NONE"> %s \n", player->name);
     int fd = player->fd;
     s_chat_msg msg;
     bzero(&msg, sizeof(msg));
+
     if (recv(fd, &msg, sizeof(msg), 0) < 0) {
         perror("recv()");
         exit(1);
     }
+
     if (msg.type & CHAT_WALL) {
         printf("<"GREEN"%s"NONE"> : %s \n", player->name, msg.msg);
+        sendto_all(&msg);
     } else if (msg.type & CHAT_MSG) {
         printf("<%s> $ %s \n", player->name, msg.msg);
     } else if (msg.type & CHAT_FIN) {
@@ -34,8 +56,9 @@ void do_work(struct Player *player) {
         del_event(epollfd, player->fd);
         printf("<"YELLOW"Server Info"NONE"> : %s log out\n", player->name);
     }
+
     DBG("<"RED"Recv"NONE"> : %s\n", msg.msg);
-    send(fd, msg.msg, strlen(msg.msg), 0);
+    //send(fd, msg.msg, strlen(msg.msg), 0);
     DBG("<"RED"Send"NONE"> : %s\n", msg.msg);
 }
 
