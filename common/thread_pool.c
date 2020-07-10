@@ -29,7 +29,29 @@ void sendto_all(s_chat_msg *msg)
         }
     }
 }
+void find_online(int fd) {
+    s_chat_msg buff;
+    sprintf(buff.msg, "online people is:\n");
+    buff.type = CHAT_FUNC;
+    strcpy(buff.from, "Server Info");
+    //send(fd, &buff, sizeof(s_chat_msg), 0);
+    s_player *team[] = {bteam, rteam};3;
+    for (int j = 0; j < 2; j++) {
+        for (int i = 0; i < MAX_PLAYER; i++) {
+             if (team[j][i].online) {
+                //buff.type = CHAT_SYS;
+                strcat(buff.msg,team[j][i].name);
+                strcat(buff.msg,"\t");
+               // sprintf(buff.msg, "%s",team[j][i].name);
+            }
+        }
+    }
 
+    strcat(buff.msg,"\n");
+    
+    send(fd, &buff, sizeof(s_chat_msg), 0);
+    return ;
+}
 void sendto_single(int fd, s_chat_msg *msg, char *name)
 {
     //struct sockaddr_in client;
@@ -37,7 +59,7 @@ void sendto_single(int fd, s_chat_msg *msg, char *name)
     bzero(&buff, sizeof(buff));
     //socklen_t len;
 
-    s_player *team[] = {bteam, rteam};
+    s_player *team[] = {bteam, rteam};3;
 
     for (int j = 0; j < 2; j++) {
         for (int i = 0; i < MAX_PLAYER; i++) {
@@ -50,7 +72,7 @@ void sendto_single(int fd, s_chat_msg *msg, char *name)
                     return;
                 } else {
                     buff.type = CHAT_MSG;
-                    strcpy(buff.from, "Server Info");
+                    //strcpy(buff.from, "Server Info");
                     sprintf(buff.msg, "%s is not online !", name);
                     send(fd, &buff, sizeof(s_chat_msg), 0);
                     return;
@@ -58,27 +80,29 @@ void sendto_single(int fd, s_chat_msg *msg, char *name)
             }
         }
     }
-    for (int j = 0; j < 2; j++) {
-        for (int i = 0; i < MAX_PLAYER; i++) {
-            if (strcmp(team[j][i].name, name) == 0) {
-                if (team[j][i].online) {
-                    send(team[j][i].fd, msg, sizeof(s_chat_msg), 0);
-                    send(fd, msg, sizeof(s_chat_msg), 0);
-                    return;
-                } else {
-                    buff.type = CHAT_MSG;
-                    strcpy(buff.from, "Server Info");
-                    sprintf(buff.msg, "%s is not online !", name);
-                    send(fd, &buff, sizeof(s_chat_msg), 0);
-                    return;
-                }
-            }
-        }
-    }
+    
     buff.type = CHAT_MSG;
     sprintf(buff.from, "Server Info");
     sprintf(buff.msg, "%s is not logged in !", name);
     send(fd, &buff, sizeof(s_chat_msg), 0);
+}
+
+void display(const char *path)
+{
+    FILE *fp = fopen(path, "r");
+    
+    if (fp == NULL) {
+        perror("fopen()");
+        exit(1);
+    }
+
+    s_chat_msg buff;
+    bzero(&buff, sizeof(buff));
+    buff.type = CHAT_FUNC;
+    while (fgets(buff.msg, sizeof(buff.msg), fp) != NULL) {
+        sendto_all(&buff);
+        bzero(buff.msg, sizeof(buff.msg));
+    }
 }
 
 void do_work(struct Player *player) {
@@ -89,7 +113,9 @@ void do_work(struct Player *player) {
     bzero(&msg, sizeof(msg));
     s_chat_msg buff;
     bzero(&buff, sizeof(buff));
-    
+    const char suantou_path[] = "../common/suantou.txt";
+
+
     if (recv(fd, &msg, sizeof(msg), 0) < 0) {
         perror("recv()");
         exit(1);
@@ -142,6 +168,27 @@ void do_work(struct Player *player) {
         sendto_all(&buff);
     } else if (msg.type & CHAT_FUNC) {
         //#1
+        int cmd = atoi(msg.msg + 1);
+        switch (cmd) {
+            case 1:
+                buff.type = CHAT_FUNC;
+                sprintf(buff.from, "Server Info");
+                find_online(fd);
+                break;
+            case 2:
+                buff.type = CHAT_WALL;
+                strcpy(buff.from, player->name);
+                sprintf(buff.msg, "little suan");
+                sendto_all(&buff);
+                display(suantou_path);
+                break;
+            default:
+                buff.type = CHAT_MSG;
+                sprintf(buff.from, "Server Info");
+                sprintf(buff.msg, "Invaild Command");
+                send(fd, &buff, sizeof(buff), 0);
+                break;
+        }
     }
 
     DBG("<"RED"Recv"NONE"> : %s\n", msg.msg);
