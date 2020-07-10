@@ -24,6 +24,15 @@ void *work(void *arg)
     }
 }
 
+void logout(int signum) 
+{
+    s_chat_msg msg;
+    msg.type = CHAT_FIN;
+    send(sockfd, &msg, sizeof(msg), 0);
+    close(sockfd);
+    exit(0);
+}
+
 int main(int argc, char **argv)
 {
     char conf_path[] = "football.conf";
@@ -115,18 +124,16 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    char buff[512];
+    signal(SIGINT, logout);
     while (1) {
-        memset(buff, 0, sizeof(buff));
-        scanf("%s", buff);
-        send(sockfd, buff, strlen(buff), 0);
-        printf("send: %s\n", buff);
-        //recv(sockfd, buff, sizeof(buff), 0);
-        //printf("recv : %s\n", buff);
-        //memset(buff, 0, sizeof(buff));
-        //if (recv(sockfd, buff, sizeof(buff), 0) < 0 );
-          //  exit(1);
-        //printf("recv : %s\n", buff);
+        s_chat_msg msg;
+        bzero(&msg, sizeof(msg));
+        msg.type = CHAT_WALL;
+        printf("Input msg:\n");
+        scanf("%[^\n]s", msg.msg);
+        getchar();
+        send(sockfd, &msg, sizeof(msg), 0);
+        printf("send: %s\n", msg.msg);
     }
     return 0;
 }

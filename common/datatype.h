@@ -8,6 +8,18 @@
 #ifndef _DATATYPE_H
 #define _DATATYPE_H
 
+
+#define CHAT_FIN 0x01
+#define CHAT_HEART 0x02
+#define CHAT_ACK 0x04
+#define CHAT_WALL 0x08    //公聊
+#define CHAT_MSG 0x10     //私聊
+
+typedef struct ChatMsg {
+    int type;
+    char msg[1024];
+}s_chat_msg;
+
 //ball
 typedef struct Point{
     double x;

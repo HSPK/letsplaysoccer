@@ -1,5 +1,5 @@
 obj = server.o common.o udp_server.o udp_epoll.o thread_pool.o sub_reactor.o
-isd = -D _D -g
+isd = -g
 inc = ../common/
 server: $(obj)
 	gcc -o server $(obj) -lpthread $(isd)

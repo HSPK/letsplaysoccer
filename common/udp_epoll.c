@@ -44,7 +44,10 @@ void add_to_sub_reactor(s_player *player)
         perror("FULL TEAM!\n");
         return;
     }
-    memcpy(&team[sub], player, sizeof(s_player));
+    team[sub] = *player;
+    //memcpy(&team[sub], player, sizeof(s_player));
+    team[sub].online = 1;
+    team[sub].flag = 10;
     DBG("<"L_RED"add to sub reactor"NONE"> sub = %d name = %s\n", sub, player->name);
     if (player->team)
         add_event_ptr(bepollfd, player->fd, events, player);
@@ -69,17 +72,11 @@ int udp_connect(struct sockaddr_in *client)
 
 int check_online(s_log_request *request)
 {
-    int sub;
-    s_player *team;
-    if (request->team) {
-        team = bteam;
-        sub = find_sub(bteam);
-    } else {
-        team = rteam;
-        sub = find_sub(rteam);
-    }
-    for (int i = 0; i < sub; i++) {
-        if (strcmp(team[i].name, request->name) == 0) {
+    for (int i = 0; i < MAX_PLAYER; i++) {
+        if (bteam[i].online == 1 && strcmp(bteam[i].name, request->name) == 0) {
+            return 1;
+        }
+        if (rteam[i].online == 1 && strcmp(rteam[i].name, request->name) == 0) {
             return 1;
         }
     }

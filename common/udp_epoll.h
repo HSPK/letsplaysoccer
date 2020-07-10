@@ -10,5 +10,6 @@
 
 int udp_connect(struct sockaddr_in *client);
 int udp_accept(int fd, s_player *player);
+void del_event(int epollfd, int fd);
 
 #endif
