@@ -29,7 +29,29 @@ void sendto_all(s_chat_msg *msg)
         }
     }
 }
+void find_online(int fd) {
+    s_chat_msg buff;
+    sprintf(buff.msg, "online people is:\n");
+    buff.type = CHAT_FUNC;
+    strcpy(buff.from, "Server Info");
+    //send(fd, &buff, sizeof(s_chat_msg), 0);
+    s_player *team[] = {bteam, rteam};3;
+    for (int j = 0; j < 2; j++) {
+        for (int i = 0; i < MAX_PLAYER; i++) {
+             if (team[j][i].online) {
+                //buff.type = CHAT_SYS;
+                strcat(buff.msg,team[j][i].name);
+                strcat(buff.msg,"\t");
+               // sprintf(buff.msg, "%s",team[j][i].name);
+            }
+        }
+    }
 
+    strcat(buff.msg,"\n");
+    
+    send(fd, &buff, sizeof(s_chat_msg), 0);
+    return ;
+}
 void sendto_single(int fd, s_chat_msg *msg, char *name)
 {
     //struct sockaddr_in client;
@@ -37,27 +59,28 @@ void sendto_single(int fd, s_chat_msg *msg, char *name)
     bzero(&buff, sizeof(buff));
     //socklen_t len;
 
-    s_player *team[] = {bteam, rteam};
+    s_player *team[] = {bteam, rteam};3;
 
     for (int j = 0; j < 2; j++) {
-    for (int i = 0; i < MAX_PLAYER; i++) {
-        if (strcmp(team[j][i].name, name) == 0) {
-            if (team[j][i].online) {
-                //getpeername(team[j][i].fd, (struct sockaddr *)&client, &len);
-                //sendto(team[j][i].fd, msg, sizeof(s_chat_msg), 0, (struct sockaddr *)&client, len);
-                send(team[j][i].fd, msg, sizeof(s_chat_msg), 0);
-                send(fd, msg, sizeof(s_chat_msg), 0);
-                return;
-            } else {
-                buff.type = CHAT_MSG;
-                strcpy(buff.from, "Server Info");
-                sprintf(buff.msg, "%s is not online !", name);
-                send(fd, &buff, sizeof(s_chat_msg), 0);
-                return;
+        for (int i = 0; i < MAX_PLAYER; i++) {
+            if (strcmp(team[j][i].name, name) == 0) {
+                if (team[j][i].online) {
+                    //getpeername(team[j][i].fd, (struct sockaddr *)&client, &len);
+                    //sendto(team[j][i].fd, msg, sizeof(s_chat_msg), 0, (struct sockaddr *)&client, len);
+                    send(team[j][i].fd, msg, sizeof(s_chat_msg), 0);
+                    send(fd, msg, sizeof(s_chat_msg), 0);
+                    return;
+                } else {
+                    buff.type = CHAT_MSG;
+                    //strcpy(buff.from, "Server Info");
+                    sprintf(buff.msg, "%s is not online !", name);
+                    send(fd, &buff, sizeof(s_chat_msg), 0);
+                    return;
+                }
             }
         }
     }
-    }
+    
     buff.type = CHAT_MSG;
     sprintf(buff.from, "Server Info");
     sprintf(buff.msg, "%s is not logged in !", name);
@@ -148,6 +171,10 @@ void do_work(struct Player *player) {
         int cmd = atoi(msg.msg + 1);
         switch (cmd) {
             case 1:
+                buff.type = CHAT_FUNC;
+                sprintf(buff.from, "Server Info");
+                find_online(fd);
+                break;
             case 2:
                 buff.type = CHAT_WALL;
                 strcpy(buff.from, player->name);
