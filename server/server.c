@@ -20,10 +20,13 @@ s_score score;
 int repollfd, bepollfd;
 
 struct Player *rteam, *bteam;
+int port = -1;
+
+void add_to_sub_reactor(s_player *player);
 
 int main(int argc, char **argv) 
 {
-    int opt, port = -1, listener;
+    int opt, listener;
 
     while ((opt = getopt(argc, argv, "p:")) != -1) {
         switch (opt) {
@@ -70,12 +73,14 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    s_task_queue *redQueue;
-    s_task_queue *blueQueue;
+    s_task_queue redQueue;
+    s_task_queue blueQueue;
+    task_queue_init(&redQueue, MAX_PLAYER, repollfd);
+    task_queue_init(&blueQueue, MAX_PLAYER, bepollfd);
     
     pthread_t red_t, blue_t;
-    pthread_create(&red_t, NULL, sub_reactor, redQueue);
-    pthread_create(&blue_t, NULL, sub_reactor, blueQueue);
+    pthread_create(&red_t, NULL, sub_reactor, &redQueue);
+    pthread_create(&blue_t, NULL, sub_reactor, &blueQueue);
 
     struct epoll_event ev, events[MAX_PLAYER * 2];
 
@@ -100,9 +105,8 @@ int main(int argc, char **argv)
         }
         for (int i = 0; i < nfds; i++) {
             s_player player;
-            char buff[512];
+            bzero(&player, sizeof(player));
             if (events[i].data.fd == listener) {
-                // recvfrom only
                 int new_fd = udp_accept(listener, &player);
                 if (new_fd > 0) {
                     add_to_sub_reactor(&player);
@@ -113,4 +117,5 @@ int main(int argc, char **argv)
 
     return 0;
 }
+
 

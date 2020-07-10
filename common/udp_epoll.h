@@ -8,6 +8,7 @@
 #ifndef _UDP_EPOLL_H
 #define _UDP_EPOLL_H
 
-int udp_accpet(i);
+int udp_connect(struct sockaddr_in *client);
+int udp_accept(int fd, s_player *player);
 
 #endif

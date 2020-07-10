@@ -53,8 +53,9 @@ _COMMON_H	common/common.h	9;"	d
 _DATATYPE_H	common/datatype.h	9;"	d
 _HEAD_H	common/head.h	9;"	d
 _SUB_REACTOR_H	common/sub_reactor.h	9;"	d
-_THREAD_POLL_H	common/thread_poll.h	9;"	d
+_THREAD_POLL_H	common/thread_pool.h	9;"	d
 _UDP_CLIENT_H	common/udp_client.h	9;"	d
+_UDP_EPOLL_H	common/udp_epoll.h	9;"	d
 _UDP_SERVER_H	common/udp_server.h	9;"	d
 a	common/datatype.h	/^    s_accel a;$/;"	m	struct:Bstatus
 action	common/datatype.h	/^    int action;$/;"	m	struct:Ctl
@@ -64,21 +65,22 @@ ball	server/server.c	/^s_point ball;    \/\/球的位置$/;"	v
 ball_status	server/server.c	/^s_Bstatus ball_status;  \/\/球的状态$/;"	v
 bepollfd	server/server.c	/^int repollfd, bepollfd;$/;"	v
 bteam	server/server.c	/^struct Player *rteam, *bteam;$/;"	v	typeref:struct:
-cond	common/thread_poll.h	/^    pthread_cond_t cond;$/;"	m	struct:task_queue
+check_online	common/udp_epoll.c	/^int check_online(s_log_request *request)$/;"	f
+cond	common/thread_pool.h	/^    pthread_cond_t cond;$/;"	m	struct:task_queue
 conf	server/server.c	/^char conf[] = ".\/footballd.conf";$/;"	v
 conf_ans	common/common.h	/^char conf_ans[50];$/;"	v
 court	server/server.c	/^s_map court;    \/\/小足球场$/;"	v
 ctl	common/datatype.h	/^    s_ctl ctl;$/;"	m	struct:FootballMsg
-do_work	common/thread_poll.c	/^void do_work(struct Player *player) {$/;"	f
+do_work	common/thread_pool.c	/^void do_work(struct Player *player) {$/;"	f
 dx	common/datatype.h	/^    int dx;$/;"	m	struct:Ctl
 dy	common/datatype.h	/^    int dy;$/;"	m	struct:Ctl
-epollfd	common/thread_poll.h	/^    int epollfd; \/\/从反应堆$/;"	m	struct:task_queue
+epollfd	common/thread_pool.h	/^    int epollfd; \/\/从反应堆$/;"	m	struct:task_queue
 fd	common/datatype.h	/^    int fd;$/;"	m	struct:Player
 flag	common/datatype.h	/^    int flag;$/;"	m	struct:Player
 gate_height	common/datatype.h	/^    int gate_height;$/;"	m	struct:Map
 gate_width	common/datatype.h	/^    int gate_width;$/;"	m	struct:Map
 get_conf_val	common/common.c	/^char *get_conf_val(char *path, char *key) $/;"	f
-head	common/thread_poll.h	/^    int head;$/;"	m	struct:task_queue
+head	common/thread_pool.h	/^    int head;$/;"	m	struct:task_queue
 height	common/datatype.h	/^    int height;$/;"	m	struct:Map
 inc	client/makefile	/^inc = ..\/common\/$/;"	m
 inc	server/makefile	/^inc = ..\/common\/$/;"	m
@@ -91,7 +93,7 @@ make_non_block	common/common.c	/^ void make_non_block(int fd) {$/;"	f
 msg	common/datatype.h	/^    char msg[512];$/;"	m	struct:LogRequest
 msg	common/datatype.h	/^    char msg[512];$/;"	m	struct:LogResponse
 msg	common/datatype.h	/^    char msg[MAX_MSG];$/;"	m	struct:FootballMsg
-mutex	common/thread_poll.h	/^    pthread_mutex_t mutex;$/;"	m	struct:task_queue
+mutex	common/thread_pool.h	/^    pthread_mutex_t mutex;$/;"	m	struct:task_queue
 name	common/datatype.h	/^    char name[20];$/;"	m	struct:Bstatus
 name	common/datatype.h	/^    char name[20];$/;"	m	struct:FootballMsg
 name	common/datatype.h	/^    char name[20];$/;"	m	struct:LogRequest
@@ -101,6 +103,7 @@ obj	server/makefile	/^obj = server.o common.o udp_server.o$/;"	m
 online	common/datatype.h	/^    int online;   $/;"	m	struct:Player
 p	common/datatype.h	/^    s_point p;$/;"	m	struct:Bstatus
 p	common/datatype.h	/^    s_point p;$/;"	m	struct:Player
+port	server/server.c	/^int port = -1;$/;"	v
 repollfd	server/server.c	/^int repollfd, bepollfd;$/;"	v
 rteam	server/server.c	/^struct Player *rteam, *bteam;$/;"	v	typeref:struct:Player
 s_Bstatus	common/datatype.h	/^}s_Bstatus;$/;"	t	typeref:struct:Bstatus
@@ -114,7 +117,7 @@ s_player	common/datatype.h	/^}s_player;$/;"	t	typeref:struct:Player
 s_point	common/datatype.h	/^}s_point;$/;"	t	typeref:struct:Point
 s_score	common/datatype.h	/^}s_score;$/;"	t	typeref:struct:Score
 s_speed	common/datatype.h	/^}s_speed;$/;"	t	typeref:struct:Speed
-s_task_queue	common/thread_poll.h	/^}s_task_queue;$/;"	t	typeref:struct:task_queue
+s_task_queue	common/thread_pool.h	/^}s_task_queue;$/;"	t	typeref:struct:task_queue
 score	server/server.c	/^s_score score;$/;"	v
 size	common/datatype.h	/^    int size;$/;"	m	struct:FootballMsg
 socket_create	common/common.c	/^ int socket_create(int port) {$/;"	f
@@ -124,21 +127,23 @@ sockfd	client/client.c	/^int sockfd;$/;"	v
 start	common/datatype.h	/^    s_point start;$/;"	m	struct:Map
 strength	common/datatype.h	/^    int strength;    \/\/踢球力度$/;"	m	struct:Ctl
 sub_reactor	common/sub_reactor.c	/^void *sub_reactor(void *arg)$/;"	f
-sum	common/thread_poll.h	/^    int sum;$/;"	m	struct:task_queue
-tail	common/thread_poll.h	/^    int tail;$/;"	m	struct:task_queue
-task_queue	common/thread_poll.h	/^typedef struct task_queue {$/;"	s
-task_queue_init	common/thread_poll.c	/^void task_queue_init(struct task_queue *taskQueue, int sum, int epollfd)$/;"	f
-task_queue_pop	common/thread_poll.c	/^struct Player *task_queue_pop(struct task_queue *taskQueue)$/;"	f
-task_queue_push	common/thread_poll.c	/^void task_queue_push(struct task_queue *taskQueue, struct Player *player)$/;"	f
+sum	common/thread_pool.h	/^    int sum;$/;"	m	struct:task_queue
+tail	common/thread_pool.h	/^    int tail;$/;"	m	struct:task_queue
+task_queue	common/thread_pool.h	/^typedef struct task_queue {$/;"	s
+task_queue_init	common/thread_pool.c	/^void task_queue_init(struct task_queue *taskQueue, int sum, int epollfd)$/;"	f
+task_queue_pop	common/thread_pool.c	/^struct Player *task_queue_pop(struct task_queue *taskQueue)$/;"	f
+task_queue_push	common/thread_pool.c	/^void task_queue_push(struct task_queue *taskQueue, struct Player *player)$/;"	f
 team	common/datatype.h	/^    int team;$/;"	m	struct:FootballMsg
 team	common/datatype.h	/^    int team;$/;"	m	struct:LogRequest
 team	common/datatype.h	/^    int team;$/;"	m	struct:Player
-team	common/thread_poll.h	/^    struct Player **team;$/;"	m	struct:task_queue	typeref:struct:task_queue::Player
+team	common/thread_pool.h	/^    struct Player **team;$/;"	m	struct:task_queue	typeref:struct:task_queue::Player
 team0	common/datatype.h	/^    int team0;$/;"	m	struct:Score
 team1	common/datatype.h	/^    int team1;$/;"	m	struct:Score
-thread_run	common/thread_poll.c	/^void *thread_run(void *arg)$/;"	f
+thread_run	common/thread_pool.c	/^void *thread_run(void *arg)$/;"	f
 type	common/datatype.h	/^    int type;$/;"	m	struct:FootballMsg
 type	common/datatype.h	/^    int type;$/;"	m	struct:LogResponse
+udp_accept	common/udp_epoll.c	/^int udp_accept(int fd, s_player *player)$/;"	f
+udp_connect	common/udp_epoll.c	/^int udp_connect(struct sockaddr_in *client)$/;"	f
 v	common/datatype.h	/^    s_speed v;$/;"	m	struct:Bstatus
 vx	common/datatype.h	/^    double vx;$/;"	m	struct:Speed
 vy	common/datatype.h	/^    double vy;$/;"	m	struct:Speed

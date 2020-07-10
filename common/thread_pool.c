@@ -9,6 +9,17 @@
 
 void do_work(struct Player *player) {
     DBG("<"BLUE"In do work"NONE"> %s \n", player->name);
+    int fd;
+    fd = player->fd;
+    char buff[512];
+    bzero(buff, sizeof(buff));
+    if (recv(fd, buff, sizeof(buff), 0) < 0) {
+        perror("recv()");
+        exit(1);
+    }
+    DBG("<"RED"Recv"NONE"> : %s\n", buff);
+    send(fd, buff, strlen(buff), 0);
+    DBG("<"RED"Send"NONE"> : %s\n", buff);
 }
 
 void task_queue_init(struct task_queue *taskQueue, int sum, int epollfd)

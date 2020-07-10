@@ -7,18 +7,83 @@
 
 #include "head.h"
 
+extern int port, repollfd, bepollfd;
+extern s_player *rteam, *bteam;
+
+void add_event_ptr(int epollfd, int fd, int events, s_player *player)
+{
+    struct epoll_event ev;
+    ev.events = events;
+    ev.data.ptr = (void *)player;
+    epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev);
+}
+
+void del_event(int epollfd, int fd) 
+{
+    epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, NULL);
+}
+
+int find_sub(s_player *team)
+{
+    for (int i = 0; i < MAX_PLAYER; i++) {
+        if (!team[i].online) return i;
+    }
+    return -1;
+}
+
+void add_to_sub_reactor(s_player *player)
+{
+    s_player *team;
+    int sub;
+    int events = EPOLLIN | EPOLLET;
+    if (player->team) 
+        team = bteam;
+    else
+        team = rteam;
+    if ((sub = find_sub(team)) < 0) {
+        perror("FULL TEAM!\n");
+        return;
+    }
+    memcpy(&team[sub], player, sizeof(s_player));
+    DBG("<"L_RED"add to sub reactor"NONE"> sub = %d name = %s\n", sub, player->name);
+    if (player->team)
+        add_event_ptr(bepollfd, player->fd, events, player);
+    else
+        add_event_ptr(repollfd, player->fd, events, player);
+}    
+
 int udp_connect(struct sockaddr_in *client)
 {
     int sockfd;
-    if ((sockfd = socket_udp()) < 0) {
+    if ((sockfd = socket_create_udp(port)) < 0) {
         perror("socket_udp()");
         return -1;
     }
 
     if (connect(sockfd, (struct sockaddr*)client, sizeof(struct sockaddr)) < 0) {
+        perror("connect()");
         return -1;
     }
     return sockfd;
+}
+
+int check_online(s_log_request *request)
+{
+    int sub;
+    s_player *team;
+    if (request->team) {
+        team = bteam;
+        sub = find_sub(bteam);
+    } else {
+        team = rteam;
+        sub = find_sub(rteam);
+    }
+    for (int i = 0; i < sub; i++) {
+        if (strcmp(team[i].name, request->name) == 0) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 int udp_accept(int fd, s_player *player)
@@ -34,6 +99,7 @@ int udp_accept(int fd, s_player *player)
     socklen_t len = sizeof(client);
 
     retval = recvfrom(fd, (void *)&request, sizeof(request), 0, (struct sockaddr *)&client, &len);
+    DBG("<"RED"Login Request!"NONE"> <%s:%d>\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
     if (retval != sizeof(request)) {
         response.type = 1;
         strcpy(response.msg, "login failed with data errors!");
@@ -48,14 +114,15 @@ int udp_accept(int fd, s_player *player)
         return -1;
     }
 
+    DBG("<"RED"Login success!"NONE">\n");
     response.type = 0;
-    strcpy(response.msg, "Login success! Enjoy your self!\n");
+    strcpy(response.msg, "Login success! Enjoy yourself!\n");
     sendto(fd, (void *)&response, sizeof(response), 0, (struct sockaddr *)&client, len);
 
     if (request.team) {
-        DBG("<"GREEN"Info"NONE" : BLUE %s login on %s:%d <%s>\n", request.name, inet_ntoa(client.sin_addr), ntohs(client.sin_port), request.msg);
+        DBG("<"GREEN"Info"NONE"> team: BLUE name: %s login on %s:%d <%s>\n", request.name, inet_ntoa(client.sin_addr), ntohs(client.sin_port), request.msg);
     } else {
-        DBG("<"GREEN"Info"NONE" : BLUE %s login on %s:%d <%s>\n", request.name, inet_ntoa(client.sin_addr), ntohs(client.sin_port), request.msg);
+        DBG("<"GREEN"Info"NONE"> team: RED name: %s login on %s:%d <%s>\n", request.name, inet_ntoa(client.sin_addr), ntohs(client.sin_port), request.msg);
     }
 
     strcpy(player->name, request.name);
@@ -64,6 +131,8 @@ int udp_accept(int fd, s_player *player)
     new_fd = udp_connect(&client);
     
     player->fd = new_fd;
+    player->online = 1;
+    player->flag = 10;
 
     return new_fd;
 }

@@ -9,6 +9,21 @@
 
 int sockfd;
 
+void *work(void *arg)
+{
+    int fd;
+    fd = *(int *)arg;
+    char buff[512];
+    while (1) {
+        memset(buff, 0, sizeof(buff));
+        if (recv(fd, buff, sizeof(buff), 0) < 0) {
+            perror("recv()");
+            exit(1);
+        }
+        printf("recv: %s\n", buff);
+    }
+}
+
 int main(int argc, char **argv)
 {
     char conf_path[] = "football.conf";
@@ -94,16 +109,24 @@ int main(int argc, char **argv)
     }
     printf("%s\n", response.msg);
 
+    pthread_t tid;
+    if (pthread_create(&tid, NULL, work, &sockfd) < 0) {
+        perror("pthread_create()");
+        exit(1);
+    }
+
     char buff[512];
     while (1) {
         memset(buff, 0, sizeof(buff));
         scanf("%s", buff);
         send(sockfd, buff, strlen(buff), 0);
-        recv(sockfd, buff, sizeof(buff), 0);
-        printf("recv : %s\n", buff);
-        memset(buff, 0, sizeof(buff));
-        recv(sockfd, buff, sizeof(buff), 0);
-        printf("recv : %s\n", buff);
+        printf("send: %s\n", buff);
+        //recv(sockfd, buff, sizeof(buff), 0);
+        //printf("recv : %s\n", buff);
+        //memset(buff, 0, sizeof(buff));
+        //if (recv(sockfd, buff, sizeof(buff), 0) < 0 );
+          //  exit(1);
+        //printf("recv : %s\n", buff);
     }
     return 0;
 }

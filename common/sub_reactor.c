@@ -27,7 +27,7 @@ void *sub_reactor(void *arg)
         }
         for (int i = 0; i < nfds; i++) {
             struct Player *player = (struct Player *)events[i].data.ptr;
-            DBG("<"L_RED"Sub Reactor"NONE" : %s Ready\n", user.name);
+            DBG("<"L_RED"Sub Reactor"NONE"> : %s Ready\n", player->name);
             if (events[i].events & EPOLLIN) {
                 task_queue_push(taskQueue, player);
             }
