@@ -18,7 +18,7 @@ typedef struct task_queue {
     pthread_cond_t cond;
 }s_task_queue;
 
-void logout(int signum);
+void sendto_all(s_chat_msg *msg);
 void task_queue_init(struct task_queue *taskQueue, int sum, int epollfd);
 void task_queue_push(struct task_queue *taskQueue, struct Player *player);
 struct Player *task_queue_pop(struct task_queue *taskQueue);

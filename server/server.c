@@ -22,7 +22,19 @@ int repollfd, bepollfd;
 struct Player *rteam, *bteam;
 int port = -1;
 
-void add_to_sub_reactor(s_player *player);
+
+void logout(int signum)
+{
+    s_chat_msg msg;
+    bzero(&msg, sizeof(msg));
+    msg.type = CHAT_FIN;
+    strcpy(msg.from, "Server Info");
+    strcpy(msg.msg, "Thank you for using ! :)");
+    sendto_all(&msg);
+    printf("<"YELLOW"Server Info"NONE"> server closed");
+    exit(0);
+
+}
 
 int main(int argc, char **argv) 
 {
