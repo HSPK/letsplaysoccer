@@ -144,7 +144,7 @@ void show_message(WINDOW *win, struct ChatMsg *msg, int type) {
     }
         wattron(win, COLOR_PAIR(3));
         w_gotoxy_puts(win, strlen(timestr) + strlen(buff), msgnum, msg->msg);
-        int tmp = ((strlen(msg->msg) + 17) / MSG_WIDTH) + 1;
+        int tmp = ((strlen(msg->msg) + strlen(timestr) + strlen(buff)) / MSG_WIDTH) + 1;
         int nnl = 0;
     for (int i = 0; i < strlen(msg->msg); i++) {
         if (msg->msg[i] == '\n');
