@@ -8,8 +8,8 @@
 #ifndef _CHAT_UI_H
 #define _CHAT_UI_H
 
-#define MSG_WIDTH 100
-#define MSG_HEIGHT 40
+#define MSG_WIDTH 150
+#define MSG_HEIGHT 45
 #define INFO_WIDTH 15
 #define INPUT_HEIGHT 5
 
