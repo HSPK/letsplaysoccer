@@ -31,26 +31,41 @@ void sendto_all(s_chat_msg *msg)
 }
 void find_online(int fd) {
     s_chat_msg buff;
-    sprintf(buff.msg, "online people is:\n");
+    int nonline = 0;
+    bzero(&buff, sizeof(buff));
     buff.type = CHAT_FUNC;
-    strcpy(buff.from, "Server Info");
+    //sprintf(buff.msg, "\t %d people online :\n");
+    ///buff.type = CHAT_FUNC;
+    //strcpy(buff.from, "Server Info");
     //send(fd, &buff, sizeof(s_chat_msg), 0);
-    s_player *team[] = {bteam, rteam};3;
-    for (int j = 0; j < 2; j++) {
-        for (int i = 0; i < MAX_PLAYER; i++) {
-             if (team[j][i].online) {
-                //buff.type = CHAT_SYS;
-                strcat(buff.msg,team[j][i].name);
-                strcat(buff.msg,"\t");
-               // sprintf(buff.msg, "%s",team[j][i].name);
-            }
+    //s_player *team[] = {bteam, rteam};3;
+    //for (int j = 0; j < 2; j++) {
+    //    for (int i = 0; i < MAX_PLAYER; i++) {
+    //         if (team[j][i].online) {
+    //            //buff.type = CHAT_SYS;
+    //            strcat(buff.msg, "\t");
+    //            strcat(buff.msg,team[j][i].name);
+    //            strcat(buff.msg,"\t");
+    //           // sprintf(buff.msg, "%s",team[j][i].name);
+    //        }
+    //    }
+    //}
+    //strcat(buff.msg,"\n");
+    
+    char names[1024] = {0};
+
+    for (int i = 0; i < MAX_PLAYER; i++) {
+        if (bteam[i].online) {
+            sprintf(names, "%s\t%d : %s\n", names, ++nonline, bteam[i].name);
+        }
+        if (rteam[i].online) {
+            sprintf(names, "%s\t%d : %s\n", names, ++nonline, rteam[i].name);
         }
     }
 
-    strcat(buff.msg,"\n");
-    
+    sprintf(buff.msg, "\t%d Online People:\n%s", nonline, names);
     send(fd, &buff, sizeof(s_chat_msg), 0);
-    return ;
+    return;
 }
 void sendto_single(int fd, s_chat_msg *msg, char *name)
 {
@@ -59,7 +74,7 @@ void sendto_single(int fd, s_chat_msg *msg, char *name)
     bzero(&buff, sizeof(buff));
     //socklen_t len;
 
-    s_player *team[] = {bteam, rteam};3;
+    s_player *team[] = {bteam, rteam};
 
     for (int j = 0; j < 2; j++) {
         for (int i = 0; i < MAX_PLAYER; i++) {
@@ -100,6 +115,7 @@ void display(const char *path)
     bzero(&buff, sizeof(buff));
     buff.type = CHAT_FUNC;
     while (fgets(buff.msg, sizeof(buff.msg), fp) != NULL) {
+        buff.msg[strlen(buff.msg) - 1] = '\0';
         sendto_all(&buff);
         bzero(buff.msg, sizeof(buff.msg));
     }
@@ -120,7 +136,7 @@ void do_work(struct Player *player) {
         perror("recv()");
         exit(1);
     }
-
+    strcpy(msg.from, player->name);
     if (msg.type & CHAT_WALL) {
         printf("<"GREEN"%s"NONE"> : %s \n", player->name, msg.msg);
         sendto_all(&msg);

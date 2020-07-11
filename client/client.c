@@ -6,10 +6,16 @@
  ************************************************************************/
 
 #include "../common/head.h"
+#include <locale.h>
+#include "chat_ui.h"
+#include "send_chat.h"
 
 int sockfd;
 s_log_response response;
 s_log_request request;
+
+WINDOW *message_win, *message_sub, *info_win, *info_sub, *input_win, *input_sub;
+int msgnum = 0;
 
 void *work(void *arg)
 {
@@ -27,24 +33,30 @@ void *work(void *arg)
             printf("<"RED"udp lost"NONE">\n");
             continue;
         }
-        if (msg.type & CHAT_WALL) {
-            if (strcmp(msg.from, request.name) == 0) {
-                printf("<"GREEN"%s"NONE"> : %s \n", msg.from, msg.msg);
-            } else {
-                printf("<"BLUE"%s"NONE"> : %s \n", msg.from, msg.msg);
-            }  
-        } else if (msg.type & CHAT_MSG) {
-            printf("<"PINK"%s"NONE"> ~ %s \n", msg.from, msg.msg);
-        } else if (msg.type & CHAT_SYS) {   
-            printf("<"YELLOW"%s"NONE"> : %s \n", msg.from, msg.msg);
-        } else if (msg.type & CHAT_FIN) {
-            printf("<"YELLOW"%s"NONE"> : %s \n", msg.from, msg.msg);
+        if (msg.type & CHAT_FIN) {
+            show_message(message_sub, &msg, 0);
             exit(0);
-        } else if (msg.type & CHAT_FUNC) {
-            printf("%s", msg.msg);
         } else {
-            printf("<"RED"Error"NONE"> : unsopported msg type ! \n");
+            show_message(message_sub, &msg, 0);
         }
+        //if (msg.type & CHAT_WALL) {
+        //    if (strcmp(msg.from, request.name) == 0) {
+        //        printf("<"GREEN"%s"NONE"> : %s \n", msg.from, msg.msg);
+        //    } else {
+        //        printf("<"BLUE"%s"NONE"> : %s \n", msg.from, msg.msg);
+        //    }  
+        //} else if (msg.type & CHAT_MSG) {
+        //    printf("<"PINK"%s"NONE"> ~ %s \n", msg.from, msg.msg);
+        //} else if (msg.type & CHAT_SYS) {   
+        //    printf("<"YELLOW"%s"NONE"> : %s \n", msg.from, msg.msg);
+        //} else if (msg.type & CHAT_FIN) {
+        //    printf("<"YELLOW"%s"NONE"> : %s \n", msg.from, msg.msg);
+        //    exit(0);
+        //} else if (msg.type & CHAT_FUNC) {
+        //    printf("%s", msg.msg);
+        //} else {
+        //    printf("<"RED"Error"NONE"> : unsopported msg type ! \n");
+        //}
     }
 }
 
@@ -59,6 +71,9 @@ void logout(int signum)
 
 int main(int argc, char **argv)
 {
+
+    setlocale(LC_ALL, "");
+
     char conf_path[] = "football.conf";
     char server_ip[20]={0};
     int  server_port = -1;
@@ -118,6 +133,8 @@ int main(int argc, char **argv)
 
     socklen_t len = sizeof(server);
 
+    init_ui();
+    
     if ((sockfd = socket_udp()) < 0) {
         perror("socket_udp()");
         exit(1);
@@ -138,7 +155,11 @@ int main(int argc, char **argv)
         fprintf(stderr, "login failed : %s\n", response.msg);
         exit(1);
     }
-    printf("%s\n", response.msg);
+    //printf("%s\n", response.msg);
+    s_chat_msg tmp;
+    tmp.type = CHAT_SYS;
+    strcpy(tmp.msg, response.msg);
+    show_message(message_sub, &tmp, 1);
 
     pthread_t tid;
     if (pthread_create(&tid, NULL, work, &sockfd) < 0) {
@@ -147,18 +168,22 @@ int main(int argc, char **argv)
     }
 
     signal(SIGINT, logout);
+    noecho();
+    cbreak();
+    //keypad(stdscr, TRUE);
     while (1) {
-        s_chat_msg msg;
-        bzero(&msg, sizeof(msg));
-        msg.type = CHAT_WALL;
-        strcpy(msg.from, request.name);
+        //s_chat_msg msg;
+        //bzero(&msg, sizeof(msg));
+        //msg.type = CHAT_WALL;
+        //strcpy(msg.from, request.name);
         //printf("Input msg:\n");
-        scanf("%[^\n]s", msg.msg);
-        getchar();
-        if (msg.msg[0] == '@') msg.type = CHAT_MSG;
-        if (msg.msg[0] == '#') msg.type = CHAT_FUNC;
-        send(sockfd, &msg, sizeof(msg), 0);
+        //scanf("%[^\n]s", msg.msg);
+        //getchar();
+        //if (msg.msg[0] == '@') msg.type = CHAT_MSG;
+        //if (msg.msg[0] == '#') msg.type = CHAT_FUNC;
+        //send(sockfd, &msg, sizeof(msg), 0);
         //printf("send: %s\n", msg.msg);
+        send_chat();
     }
     return 0;
 }

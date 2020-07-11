@@ -8,6 +8,7 @@
 #ifndef _HEAD_H
 #define _HEAD_H
 
+#include <ncurses.h>
 #include <sys/epoll.h>
 #include <arpa/inet.h>
 #include <ctype.h>
@@ -44,5 +45,8 @@
 #include "thread_pool.h"
 #include "sub_reactor.h"
 #include "udp_epoll.h"
+//#include "chat_ui.h"
+//#include "send_chat.h"
+
 
 #endif
