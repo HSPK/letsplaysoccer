@@ -33,7 +33,7 @@ void find_online(int fd) {
     s_chat_msg buff;
     int nonline = 0;
     bzero(&buff, sizeof(buff));
-    buff.type = CHAT_FUNC;
+    buff.type = CHAT_SYS;
     //sprintf(buff.msg, "\t %d people online :\n");
     ///buff.type = CHAT_FUNC;
     //strcpy(buff.from, "Server Info");
@@ -56,14 +56,14 @@ void find_online(int fd) {
 
     for (int i = 0; i < MAX_PLAYER; i++) {
         if (bteam[i].online) {
-            sprintf(names, "%s\t%d : %s\n", names, ++nonline, bteam[i].name);
+            sprintf(names, "%s %d : %s, ", names, ++nonline, bteam[i].name);
         }
         if (rteam[i].online) {
-            sprintf(names, "%s\t%d : %s\n", names, ++nonline, rteam[i].name);
+            sprintf(names, "%s %d : %s, ", names, ++nonline, rteam[i].name);
         }
     }
 
-    sprintf(buff.msg, "\t%d Online People:\n%s", nonline, names);
+    sprintf(buff.msg, "%d Online People: %s", nonline, names);
     send(fd, &buff, sizeof(s_chat_msg), 0);
     return;
 }
